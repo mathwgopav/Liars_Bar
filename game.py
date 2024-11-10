@@ -25,7 +25,8 @@ class Ace(Cards):
 #baralho
 class Deck:
     def __init__(self):
-        self.cards = self.create_deck()
+        self.cards = self.create_deck()#lista de objetos
+        self.chosen_card = random.choice(self.cards)
     
     def create_deck(self):
         king = [King() for _ in range(6)]
@@ -42,6 +43,9 @@ class Deck:
         self.cards = self.cards[n:]
         return draw_cards
     
+    def chosen_another_card(self):
+        self.chosen_card = random.choice(self.cards)
+    
 #Mao
 class Hand:
     def __init__(self, deck: Deck):
@@ -56,7 +60,7 @@ class Char:
         self.name = self.__choice_char()
         self.gun = Gun()
         self.hand = Hand(deck)
-        # seu baralho
+        self.last_played_cards = []
         
     def __choice_char(self):
         quest = [
@@ -70,9 +74,11 @@ class Char:
         print(f"Você escolheu: {res['chars']}")
         return res['chars']
     
-    def play_cards(self):
+    def play_cards(self, is_firt_turn):
+        #opcoes pra escolher
         choices = ["LIARRRR!!!!"]+[str(card) for card in self.hand.show_hand()]
 
+        #validaçao
         def limit_cards_to_play(answers, current):
             if "LIARRRR!!!!" in current and len(current) > 1:
                 raise ValidationError('', reason="Você só pode escolher 'LIARRRR!!!!' isoladamente!")
@@ -83,7 +89,7 @@ class Char:
         quest = [
             inquirer.Checkbox(
                 'cards',
-                message="Sua vez de jogar! Escolha até 3 cartas:",
+                message=f"Sua vez de jogar {self.name}!",
                 choices=choices,
                 validate=limit_cards_to_play
             )
@@ -92,16 +98,34 @@ class Char:
         res = inquirer.prompt(quest)
         
         if res['cards'] == ['LIARRRR!!!!']:
-            self.LIAR()
-        else:
-            print(f"Você jogou as cartas: {res['cards']}")
+            if is_firt_turn:
+                print("Você não pode acusar de mentiroso na primeira rodada!")
+            else:
+                return "LIAR"
+                
+        self.last_played_cards = res['cards']
+        print(f"{self.name} jogou  {len(res['cards'])} cartas")
+        
+        return "PLAYED"
         
     
     #Acusar de mentiroso
-    def LIAR(self):
-        self.gun.shoot()    
+    def LIAR(self, accused_player, chosen_card:Deck):
+        #TODOS os jogadores devem ver essa mesnsagem
+        print(f"{self.name}: M E N T I R O S O . . . !")
+        #tempo pra revelar as cartas do jogador anterior
+        time.sleep(3)
+        #as cartas sao ..............
+        #faço a verificaçao se o acusador (self.char) acertou, ou seja o jogador anterior está mentindo e nao colocou a(s) carta correta(s).
+        print(f"As cartas jogadas por {accused_player.name} foram: {accused_player.last_played_cards}")
+        
+        if all(card == chosen_card.name for card in accused_player.last_played_cards):
+            print(f"{self.name} está ERRADO. Agora é hora da roleta russa!")
+            return self.gun.shoot()
+        else:
+            print(f"{self.name} estava correto! {accused_player.name} estava mentindo!")
+            return "ACUSATION_SUCCESS"
     
-
 #pistola
 class Gun:
     def __init__(self):
@@ -115,15 +139,17 @@ class Gun:
             return
         
         if self.current_bullet == self.bullet:
-            print(f"{self.current_bullet} Arma mirada na cabeça...")
+            print("Arma mirada na sua cabeça...")
             time.sleep(3)
-            print("Tiro na cabeça 💀☠️")
+            print("Tiro na cabeça 💀")
             self.current_bullet = self.barrel
+            return -1
         else:
             print(f"{self.current_bullet} Arma mirada na cabeça...")
             time.sleep(3)
             print("Ufa... escapou dessa vez!")
             self.current_bullet += 1
+            print(f"Voce tem {self.barrel - self.current_bullet} tiros restantes! ☢️")
 
 
 
