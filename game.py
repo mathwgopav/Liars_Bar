@@ -71,10 +71,12 @@ class Char:
         return res['chars']
     
     def play_cards(self):
-        choices = [str(card) for card in self.hand.show_hand()]
+        choices = ["LIARRRR!!!!"]+[str(card) for card in self.hand.show_hand()]
 
         def limit_cards_to_play(answers, current):
-            if len(current) > 3:
+            if "LIARRRR!!!!" in current and len(current) > 1:
+                raise ValidationError('', reason="Você só pode escolher 'LIARRRR!!!!' isoladamente!")
+            elif len(current) > 3:
                 raise ValidationError('', reason="Você pode escolher no máximo 3 cartas!")
             return True
 
@@ -88,12 +90,17 @@ class Char:
         ]
         
         res = inquirer.prompt(quest)
-        print(f"Você jogou as cartas: {res['cards']}")
+        
+        if res['cards'] == ['LIARRRR!!!!']:
+            self.LIAR()
+        else:
+            print(f"Você jogou as cartas: {res['cards']}")
         
     
     #Acusar de mentiroso
     def LIAR(self):
-        pass
+        self.gun.shoot()    
+    
 
 #pistola
 class Gun:
